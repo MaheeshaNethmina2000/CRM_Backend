@@ -1,0 +1,13 @@
+services:
+  backend-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: my-app-be-prod
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage/uploads:/app/storage/uploads
