@@ -1,30 +1,31 @@
 from fastapi import APIRouter
-from starlette.responses import HTMLResponse
+from fastapi.responses import JSONResponse
 
-# Import your routers here. Example:
-# from .user_controller import router as user_router
-
+# Central parent routing architecture for the entire CRM application
 all_routers = APIRouter()
 
-# Register your routers here. Example:
-# all_routers.include_router(user_router)
+# Future feature modules will be explicitly registered below as development progresses:
+# from app.controller.auth_controller import router as auth_router
+# all_routers.include_router(auth_router, prefix="/auth")
 
+@all_routers.get("/", tags=["Root"])
+async def root() -> JSONResponse:
+    # Provides a clean, standardized entry-point verification packet for the api framework
+    return JSONResponse(
+        status_code=200,
+        content={
+            "success": True,
+            "message": "Sisenco Unified Operations CRM API Gateway is running optimally"
+        }
+    )
 
-@all_routers.get("/", response_class=HTMLResponse)
-async def root():
-    html_content = """
-    <html>
-        <head>
-            <title>FastAPI Service</title>
-        </head>
-        <body>
-            <h1>FastAPI Service</h1>
-        </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
-
-
-@all_routers.get("/health")
-async def health():
-    return {"status": "ok"}
+@all_routers.get("/health", tags=["System Health"])
+async def health() -> JSONResponse:
+    # Zero-dependency diagnostic micro-endpoint used by deployment platforms to run automated health checks
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "healthy",
+            "engine": "FastAPI Asynchronous Engine 2.0"
+        }
+    )

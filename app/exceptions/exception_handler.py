@@ -1,30 +1,39 @@
-from fastapi import Request
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.config.logging_config import get_logger
 from app.exceptions.base_exception import BaseAppException
-from app.model.generic_response import GenericResponse
 
 logger = get_logger(__name__)
 
-
-def add_exception_handler(app):
+def add_exception_handler(app: FastAPI) -> None:
+    
     @app.exception_handler(BaseAppException)
-    async def base_exception_handler(request: Request, exc: BaseAppException):
-        logger.error(f"Exception occurred: {exc.message}")
-        response = GenericResponse.failed(
-            message=exc.message,
-            status_code=exc.status,
-            results=[],
+    async def base_exception_handler(request: Request, exc: BaseAppException) -> JSONResponse:
+        # Logs as a warning since this is a known, handled business logic rule failure
+        logger.warning(f"Application exception: {exc.message} on path {request.url.path}")
+        
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "success": False,
+                "error": exc.__class__.__name__,
+                "message": exc.message,
+                "data": None
+            }
         )
-        return JSONResponse(status_code=exc.status, content=response.to_dict())
 
     @app.exception_handler(Exception)
-    async def general_exception_handler(request: Request, exc: Exception):
-        logger.error(f"Unhandled exception: {str(exc)}")
-        response = GenericResponse.failed(
-            message="Internal server error",
+    async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+        # Logs as a critical error because this is an unhandled system crash (e.g., raw database failure)
+        logger.error(f"Unhandled system exception on path {request.url.path}: {str(exc)}")
+        
+        return JSONResponse(
             status_code=500,
-            results=[],
+            content={
+                "success": False,
+                "error": "InternalServerError",
+                "message": "An unexpected internal server error occurred.",
+                "data": None
+            }
         )
-        return JSONResponse(status_code=500, content=response.to_dict())

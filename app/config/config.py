@@ -1,37 +1,56 @@
-import os
+from pydantic import Field, computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from dotenv import load_dotenv
+class Settings(BaseSettings):
+    # Application 
+    ENVIRONMENT: str = Field(default="development")
+    LOG_LEVEL: str = Field(default="DEBUG")
 
-load_dotenv(".env")
+    # Database Configuration (Required fields have no defaults to enforce strict safety)
+    POSTGRES_USERNAME: str = Field(...)
+    POSTGRES_PASSWORD: str = Field(...)
+    POSTGRES_HOST: str = Field(...)
+    POSTGRES_PORT: str = Field(default="5432")
+    POSTGRES_DB_NAME: str = Field(...)
+    SQL_LOG: bool = Field(default=False)
 
-LOG_LEVEL = os.environ.get("LOG_LEVEL", "DEBUG")
+    @computed_field
+    @property
+    def DATABASE_URL(self) -> str:
+        # Dynamically compiles the async SQLAlchemy database connection string 
+        return f"postgresql+asyncpg://{self.POSTGRES_USERNAME}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_NAME}"
 
-POSTGRES_USERNAME = os.environ.get("POSTGRES_USERNAME")
-POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD")
-POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
-POSTGRES_PORT = os.environ.get("POSTGRES_PORT")
-POSTGRES_DB_NAME = os.environ.get("POSTGRES_DB_NAME")
-SQL_LOG = os.environ.get("SQL_LOG", "False")
+    # JWT Security Configuration
+    JWT_SECRET: str = Field(...)
+    JWT_ALGORITHM: str = Field(default="HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=1440)
+    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=30)
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "supersecretkey_change_in_production")
-JWT_ALGORITHM = os.environ.get("JWT_ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
-REFRESH_TOKEN_EXPIRE_DAYS = int(os.environ.get("REFRESH_TOKEN_EXPIRE_DAYS", "30"))
+    # Email Service (Brevo) Configuration
+    EMAIL_REQUEST_TIMEOUT_SECONDS: int = Field(default=30)
+    EMAIL_MAX_RETRIES: int = Field(default=3)
+    EMAIL_RETRY_BACKOFF_SECONDS: float = Field(default=1.0)
+    BREVO_API_KEY: str = Field(default="")
+    BREVO_FROM_EMAIL: str = Field(default="noreply@example.com")
+    BREVO_FROM_NAME: str = Field(default="Application")
+    BREVO_REPLY_TO_EMAIL: str = Field(default="")
+    BREVO_REPLY_TO_NAME: str = Field(default="")
+    OTP_EXPIRE_MINUTES: int = Field(default=15)
 
-EMAIL_REQUEST_TIMEOUT_SECONDS = int(os.environ.get("EMAIL_REQUEST_TIMEOUT_SECONDS", "30"))
-EMAIL_MAX_RETRIES = int(os.environ.get("EMAIL_MAX_RETRIES", "3"))
-EMAIL_RETRY_BACKOFF_SECONDS = float(os.environ.get("EMAIL_RETRY_BACKOFF_SECONDS", "1.0"))
+    # AI Provider Configuration
+    AI_PROVIDER: str = Field(default="gemini")
+    AI_MODEL: str = Field(default="gemini-2.5-flash")
+    GEMINI_API_KEY: str = Field(default="")
+    AI_API_URL: str = Field(default="https://generativelanguage.googleapis.com/v1beta/models")
+    AI_REQUEST_TIMEOUT: int = Field(default=180)
 
-BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
-BREVO_FROM_EMAIL = os.environ.get("BREVO_FROM_EMAIL", "noreply@example.com")
-BREVO_FROM_NAME = os.environ.get("BREVO_FROM_NAME", "Application")
-BREVO_REPLY_TO_EMAIL = os.environ.get("BREVO_REPLY_TO_EMAIL", "")
-BREVO_REPLY_TO_NAME = os.environ.get("BREVO_REPLY_TO_NAME", "")
-OTP_EXPIRE_MINUTES = int(os.environ.get("OTP_EXPIRE_MINUTES", "15"))
+    # Instructs Pydantic to natively map variables from your active .env file
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore"
+    )
 
-# AI Extraction
-AI_PROVIDER = os.environ.get("AI_PROVIDER", "gemini")
-AI_MODEL = os.environ.get("AI_MODEL", "gemini-2.5-flash")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-AI_API_URL = os.environ.get("AI_API_URL", "https://generativelanguage.googleapis.com/v1beta/models")
-AI_REQUEST_TIMEOUT = int(os.environ.get("AI_REQUEST_TIMEOUT", "180"))
+# Instantiates a single application-wide configuration context singleton
+settings = Settings()
