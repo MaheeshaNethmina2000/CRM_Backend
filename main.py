@@ -10,6 +10,8 @@ from app.config.logging_config import get_logger
 from app.controller import all_routers
 from app.exceptions.exception_handler import add_exception_handler
 
+print("Hello world!")
+
 logger = get_logger(class_name=__name__)
 
 @asynccontextmanager
@@ -50,3 +52,4 @@ app.include_router(all_routers)
 if __name__ == "__main__":
     # Boots the production ASGI server instance bounded to local host interfaces
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
