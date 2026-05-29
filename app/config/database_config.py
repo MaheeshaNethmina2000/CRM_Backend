@@ -8,10 +8,7 @@ from app.config.config import settings
 engine = create_async_engine(
     settings.DATABASE_URL,
     future=True,
-    echo=settings.SQL_LOG,
-    pool_pre_ping=True,  # Tests connections for drops before using them
-    pool_size=20,        # Maximum number of permanent connections to keep open
-    max_overflow=10      # How many extra connections to create during traffic spikes
+    echo=settings.SQL_LOG
 )
 
 # 2. Create the asynchronous session factory

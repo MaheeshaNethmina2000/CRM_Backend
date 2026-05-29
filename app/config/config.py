@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def DATABASE_URL(self) -> str:
-        # Dynamically compiles the async SQLAlchemy database connection string 
+        # Dynamically compiles the async SQLAlchemy database connection string
         return f"postgresql+asyncpg://{self.POSTGRES_USERNAME}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_NAME}"
 
     # JWT Security Configuration
