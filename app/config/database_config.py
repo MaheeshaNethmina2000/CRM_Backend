@@ -1,17 +1,14 @@
 from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-# Import the centralized Pydantic settings object, not individual variables
 from app.config.config import settings
+from app.entity.base import Base
 
 # 1. Create the asynchronous database engine
 engine = create_async_engine(
     settings.DATABASE_URL,
     future=True,
-    echo=settings.SQL_LOG,
-    pool_pre_ping=True,  # Tests connections for drops before using them
-    pool_size=20,        # Maximum number of permanent connections to keep open
-    max_overflow=10      # How many extra connections to create during traffic spikes
+    echo=settings.SQL_LOG
 )
 
 # 2. Create the asynchronous session factory
@@ -36,3 +33,6 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
         finally:
             await session.close()
+
+# Legacy alias for older imports and test utilities
+get_database = get_db

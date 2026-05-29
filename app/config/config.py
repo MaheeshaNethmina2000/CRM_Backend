@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def DATABASE_URL(self) -> str:
-        # Dynamically compiles the async SQLAlchemy database connection string 
+        # Dynamically compiles the async SQLAlchemy database connection string
         return f"postgresql+asyncpg://{self.POSTGRES_USERNAME}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB_NAME}"
 
     # JWT Security Configuration
@@ -54,3 +54,34 @@ class Settings(BaseSettings):
 
 # Instantiates a single application-wide configuration context singleton
 settings = Settings()
+
+# ---------------------------------------------------------------------------
+# Convenience exports for legacy imports and easier runtime access
+# ---------------------------------------------------------------------------
+POSTGRES_USERNAME = settings.POSTGRES_USERNAME
+POSTGRES_PASSWORD = settings.POSTGRES_PASSWORD
+POSTGRES_HOST = settings.POSTGRES_HOST
+POSTGRES_PORT = settings.POSTGRES_PORT
+POSTGRES_DB_NAME = settings.POSTGRES_DB_NAME
+SQL_LOG = settings.SQL_LOG
+
+JWT_SECRET = settings.JWT_SECRET
+JWT_ALGORITHM = settings.JWT_ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
+
+EMAIL_REQUEST_TIMEOUT_SECONDS = settings.EMAIL_REQUEST_TIMEOUT_SECONDS
+EMAIL_MAX_RETRIES = settings.EMAIL_MAX_RETRIES
+EMAIL_RETRY_BACKOFF_SECONDS = settings.EMAIL_RETRY_BACKOFF_SECONDS
+BREVO_API_KEY = settings.BREVO_API_KEY
+BREVO_FROM_EMAIL = settings.BREVO_FROM_EMAIL
+BREVO_FROM_NAME = settings.BREVO_FROM_NAME
+BREVO_REPLY_TO_EMAIL = settings.BREVO_REPLY_TO_EMAIL
+BREVO_REPLY_TO_NAME = settings.BREVO_REPLY_TO_NAME
+OTP_EXPIRE_MINUTES = settings.OTP_EXPIRE_MINUTES
+
+AI_PROVIDER = settings.AI_PROVIDER
+AI_MODEL = settings.AI_MODEL
+GEMINI_API_KEY = settings.GEMINI_API_KEY
+AI_API_URL = settings.AI_API_URL
+AI_REQUEST_TIMEOUT = settings.AI_REQUEST_TIMEOUT

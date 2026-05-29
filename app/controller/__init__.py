@@ -1,12 +1,22 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
+# Import all feature routers
+from app.controller.staff_controller import router as staff_router
+from app.controller.contact_controller import router as contact_router
+from app.controller.ticket_controller import router as ticket_router
+from app.controller.payment_controller import router as payment_router
+from app.controller.call_detail_controller import router as call_detail_router
+
 # Central parent routing architecture for the entire CRM application
 all_routers = APIRouter()
 
-# Future feature modules will be explicitly registered below as development progresses:
-# from app.controller.auth_controller import router as auth_router
-# all_routers.include_router(auth_router, prefix="/auth")
+# Register all feature routers
+all_routers.include_router(staff_router)
+all_routers.include_router(contact_router)
+all_routers.include_router(ticket_router)
+all_routers.include_router(payment_router)
+all_routers.include_router(call_detail_router)
 
 @all_routers.get("/", tags=["Root"])
 async def root() -> JSONResponse:

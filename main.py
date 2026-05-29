@@ -10,22 +10,40 @@ from app.config.logging_config import get_logger
 from app.controller import all_routers
 from app.exceptions.exception_handler import add_exception_handler
 
-print("Hello world!")
+# CRITICAL ADDITION: We must import all entities here so SQLAlchemy registers them
+# If they are not imported, SQLAlchemy's Base.metadata will not know they exist and won't create them!
+from app.entity.base import Base
+from app.entity.staff import Staff
+from app.entity.contact import Contact
+from app.entity.ticket import Ticket
+from app.entity.payment import Payment
+from app.entity.call_detail import CallDetail
 
 logger = get_logger(class_name=__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Executes defensive configuration safety checks right before exposing ports to web traffic
     validate_startup_configurations()
+
+    # --- AUTOMATED DATABASE INITIALIZATION ---
+    logger.info("Initializing PostgreSQL database schema...")
+    async with engine.begin() as conn:
+        # We use run_sync because create_all is a synchronous SQLAlchemy command wrapping our async engine
+        await conn.run_sync(Base.metadata.create_all)
+    logger.info("Database tables verified and physically created successfully.")
+    # -----------------------------------------
+
     logger.info("Application lifespan initialization completed successfully.")
-    
+
     yield
-    
+
     # Cleanly disposes of all open socket pools within the async engine during container shutdown
     logger.info("Shutting down database connection engine pools...")
     await engine.dispose()
     logger.info("Lifespan context terminated cleanly.")
+
 
 app = FastAPI(
     title="Sisenco Unified Operations CRM API",
@@ -52,4 +70,3 @@ app.include_router(all_routers)
 if __name__ == "__main__":
     # Boots the production ASGI server instance bounded to local host interfaces
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
