@@ -17,7 +17,7 @@ from app.entity.staff import Staff
 from app.entity.contact import Contact
 from app.entity.ticket import Ticket
 from app.entity.payment import Payment
-from app.entity.call_details import CallDetail
+from app.entity.call_detail import CallDetail
 
 logger = get_logger(class_name=__name__)
 

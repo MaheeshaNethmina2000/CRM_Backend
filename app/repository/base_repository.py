@@ -1,4 +1,6 @@
 from abc import ABC
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.logging_config import get_logger
 from app.exceptions.exception import DbOperationException
@@ -12,31 +14,33 @@ class BaseRepository(ABC):
         self.model = model
 
     @classmethod
-    def save(cls, entity, db):
+    async def save(cls, entity, db: AsyncSession):
         try:
             db.add(entity)
-            db.commit()
-            db.refresh(entity)
+            await db.commit()
+            await db.refresh(entity)
             return entity
         except Exception as e:
-            db.rollback()
+            await db.rollback()
             logger.error(f"Failed to save entity to database. Error: {str(e)}")
             raise DbOperationException(message="Unable to save the entity.")
 
-    def get_by_id(self, _id, db):
+    async def get_by_id(self, _id, db: AsyncSession):
         try:
-            return db.query(self.model).filter(self.model.id == _id).first()
+            query = select(self.model).filter(self.model.id == _id)
+            result = await db.execute(query)
+            return result.scalar_one_or_none()
         except Exception as e:
             logger.error(f"Failed to get entity by id. Error: {str(e)}")
             raise DbOperationException(message="Unable to get the entity.")
 
     @classmethod
-    def update(cls, entity, db):
+    async def update(cls, entity, db: AsyncSession):
         try:
-            db.commit()
-            db.refresh(entity)
+            await db.commit()
+            await db.refresh(entity)
             return entity
         except Exception as e:
-            db.rollback()
+            await db.rollback()
             logger.error(f"Failed to update entity. Error: {str(e)}")
             raise DbOperationException(message="Unable to update the entity.")
