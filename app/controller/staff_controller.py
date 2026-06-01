@@ -15,16 +15,21 @@ router = APIRouter(
     tags=["Staff"],
 )
 
+
 class StaffRegisterRequest(BaseModel):
     email: EmailStr
     password: str
+    # 'role' has been completely removed from the request schema.
+    # It is forced to WHATSAPP_AGENT securely in the service layer.
     is_active: bool = True
+
 
 class StaffUpdateRequest(BaseModel):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
+
 
 class StaffLoginRequest(BaseModel):
     email: EmailStr
@@ -58,11 +63,11 @@ async def get_staff(
     response: Response,
     staff_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(require_roles([UserRole.SYSTEM_ADMIN, UserRole.WHATSAPP_AGENT, UserRole.CALL_CENTER_AGENT]))
 ):
     result = await StaffService.get_staff_by_id(staff_id, db)
     response.status_code = result.status_code
     return result
+
 
 
 # Only a SYSTEM_ADMIN can update staff profiles (e.g., upgrading user roles)
@@ -72,11 +77,12 @@ async def update_staff(
     staff_id: UUID,
     request: StaffUpdateRequest,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(require_roles([UserRole.SYSTEM_ADMIN]))
+    current_user = Depends(require_roles([UserRole.SYSTEM_ADMIN]))
 ):
     result = await StaffService.update_staff(staff_id, request.model_dump(exclude_unset=True), db)
     response.status_code = result.status_code
     return result
+
 
 
 # Only a SYSTEM_ADMIN can permanently delete a staff member
@@ -85,7 +91,7 @@ async def delete_staff(
     response: Response,
     staff_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(require_roles([UserRole.SYSTEM_ADMIN]))
+    current_user = Depends(require_roles([UserRole.SYSTEM_ADMIN]))
 ):
     result = await StaffService.delete_staff(staff_id, db)
     response.status_code = result.status_code
@@ -99,7 +105,6 @@ async def get_all_staff(
     limit: int = 10,
     is_active: bool = None,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(require_roles([UserRole.SYSTEM_ADMIN, UserRole.WHATSAPP_AGENT, UserRole.CALL_CENTER_AGENT]))
 ):
     result = await StaffService.get_all_staff(db, page, limit, is_active)
     response.status_code = result.status_code

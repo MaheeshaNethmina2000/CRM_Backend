@@ -8,11 +8,12 @@ from app.model.generic_pagination_response import GenericPaginationResponse
 from app.exceptions.exception import NotFoundException, BadRequestException, UnauthorizedException
 from app.config.logging_config import get_logger
 
+# Import the security utilities
 from app.util.security import get_password_hash, verify_password, create_access_token
-from app.enums.enums import UserRole
 
 logger = get_logger(class_name=__name__)
 staff_repository = StaffRepository()
+
 
 class StaffService:
 
@@ -23,20 +24,20 @@ class StaffService:
             email = credentials.get("email")
             password = credentials.get("password")
 
-            # Check if user exists
+            # 1. Check if user exists
             user = await staff_repository.get_by_email(email, db)
             if not user:
                 raise UnauthorizedException(message="Invalid email or password")
 
-            # Check if user is active
+            # 2. Check if user is active
             if not user.is_active:
                 raise UnauthorizedException(message="Account is deactivated")
 
-            # Verify the hashed password
+            # 3. Verify the hashed password
             if not verify_password(password, user.password):
                 raise UnauthorizedException(message="Invalid email or password")
 
-            # Generate the JWT Access Token
+            # 4. Generate the JWT Access Token
             access_token = create_access_token(user_id=str(user.id))
 
             logger.info(f"Staff login successful for ID: {user.id}")
@@ -73,24 +74,23 @@ class StaffService:
             if existing_staff:
                 raise BadRequestException(message="Email already exists")
 
-            # save the staff records
-            staff_entity_data = {
-                "email": staff_data.get("email"),
-                "password": get_password_hash(staff_data.get("password")),
-                "role": UserRole.WHATSAPP_AGENT,
-                "is_active": staff_data.get("is_active", True)
-            }
+            # --- CRITICAL SECURITY UPDATES ---
+            # 1. Hash the plain-text password
+            if "password" in staff_data:
+                staff_data["password"] = get_password_hash(staff_data["password"])
 
-            staff = Staff(**staff_entity_data)
+            # 2. Force the default role (Prevents privilege escalation attacks)
+            from app.enums.enums import UserRole
+            staff_data["role"] = UserRole.WHATSAPP_AGENT
+            # --------------------------------
+
+            staff = Staff(**staff_data)
             staff = await staff_repository.save(staff, db)
 
             logger.info(f"Register staff completed with ID: {staff.id}")
             return GenericResponse.success(
                 message="Staff registered successfully",
-                results={
-                    "id": str(staff.id),
-                    "email": staff.email
-                },
+                results={"id": str(staff.id), "email": staff.email},
                 status_code=201,
             )
         except Exception as e:
