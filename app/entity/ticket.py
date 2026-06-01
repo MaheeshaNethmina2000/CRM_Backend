@@ -18,7 +18,7 @@ class Ticket(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     # Lead Data
     lead_name = Column(String(255), nullable=False)
-    lead_mobilephone = Column(String(20), nullable=False)
+    lead_phone = Column(String(20), nullable=False)
     lead_location = Column(String(255), nullable=True)
     course = Column(String(255), nullable=True)
     lead_source = Column(String(100), nullable=True)

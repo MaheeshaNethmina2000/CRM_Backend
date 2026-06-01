@@ -16,11 +16,14 @@ router = APIRouter(
 
 
 class AgentLeadCreateRequest(BaseModel):
-    contact_id: UUID
-    lead_name: str
-    lead_mobilephone: str
+    # --- EXPLICIT CONTACT DETAILS ---
+    first_name: str
+    last_name: str
+    phone_number: str
+    address: Optional[str] = None
+
+    # --- TICKET SPECIFIC DETAILS ---
     current_stage: TicketStage = TicketStage.NEW_LEAD
-    lead_location: Optional[str] = None
     course: Optional[str] = None
     lead_source: Optional[str] = None
     class_mode: Optional[str] = None
@@ -31,7 +34,7 @@ class AgentLeadCreateRequest(BaseModel):
 class AgentLeadUpdateRequest(BaseModel):
     current_stage: Optional[TicketStage] = None
     lead_name: Optional[str] = None
-    lead_mobilephone: Optional[str] = None
+    lead_phone: Optional[str] = None
     lead_location: Optional[str] = None
     course: Optional[str] = None
     lead_source: Optional[str] = None

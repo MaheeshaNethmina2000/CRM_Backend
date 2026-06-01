@@ -21,7 +21,7 @@ import app.entity.ticket
 import app.entity.payment
 import app.entity.call_detail
 import app.entity.activity_log
-# ------------------------------------------------------------
+
 
 logger = get_logger(class_name=__name__)
 
