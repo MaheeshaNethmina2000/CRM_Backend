@@ -7,16 +7,20 @@ from app.config.database_config import get_db
 from app.service.staff_service import StaffService
 from app.enums.enums import UserRole
 
+# Import the security dependency for Role-Based Access Control
+from app.util.security import require_roles
+
 router = APIRouter(
     prefix="/v1/api/staff",
     tags=["Staff"],
 )
 
 
-class StaffCreateRequest(BaseModel):
+class StaffRegisterRequest(BaseModel):
     email: EmailStr
     password: str
-    role: UserRole = UserRole.WHATSAPP_AGENT
+    # 'role' has been completely removed from the request schema.
+    # It is forced to WHATSAPP_AGENT securely in the service layer.
     is_active: bool = True
 
 
@@ -32,7 +36,7 @@ class StaffLoginRequest(BaseModel):
     password: str
 
 
-@router.post("/login")
+@router.get("/login")
 async def login_staff(
     response: Response,
     request: StaffLoginRequest,
@@ -43,13 +47,13 @@ async def login_staff(
     return result
 
 
-@router.post("/")
-async def create_staff(
+@router.post("/register")
+async def register_staff(
     response: Response,
-    request: StaffCreateRequest,
+    request: StaffRegisterRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await StaffService.create_staff(request.model_dump(), db)
+    result = await StaffService.register_staff(request.model_dump(), db)
     response.status_code = result.status_code
     return result
 
@@ -65,23 +69,29 @@ async def get_staff(
     return result
 
 
+
+# Only a SYSTEM_ADMIN can update staff profiles (e.g., upgrading user roles)
 @router.patch("/{staff_id}")
 async def update_staff(
     response: Response,
     staff_id: UUID,
     request: StaffUpdateRequest,
     db: AsyncSession = Depends(get_db),
+    current_user = Depends(require_roles([UserRole.SYSTEM_ADMIN]))
 ):
     result = await StaffService.update_staff(staff_id, request.model_dump(exclude_unset=True), db)
     response.status_code = result.status_code
     return result
 
 
+
+# Only a SYSTEM_ADMIN can permanently delete a staff member
 @router.delete("/{staff_id}")
 async def delete_staff(
     response: Response,
     staff_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user = Depends(require_roles([UserRole.SYSTEM_ADMIN]))
 ):
     result = await StaffService.delete_staff(staff_id, db)
     response.status_code = result.status_code

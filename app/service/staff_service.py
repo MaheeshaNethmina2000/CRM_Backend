@@ -65,36 +65,40 @@ class StaffService:
             )
 
     @classmethod
-    async def create_staff(cls, staff_data: dict, db: AsyncSession):
+    async def register_staff(cls, staff_data: dict, db: AsyncSession):
         try:
-            logger.info("Create staff process started")
+            logger.info("Register staff process started")
 
             # Check if email already exists
             existing_staff = await staff_repository.get_by_email(staff_data.get("email"), db)
             if existing_staff:
                 raise BadRequestException(message="Email already exists")
 
-            # --- CRITICAL SECURITY UPDATE ---
-            # Hash the plain-text password before it becomes an entity
+            # --- CRITICAL SECURITY UPDATES ---
+            # 1. Hash the plain-text password
             if "password" in staff_data:
                 staff_data["password"] = get_password_hash(staff_data["password"])
+
+            # 2. Force the default role (Prevents privilege escalation attacks)
+            from app.enums.enums import UserRole
+            staff_data["role"] = UserRole.WHATSAPP_AGENT
             # --------------------------------
 
             staff = Staff(**staff_data)
             staff = await staff_repository.save(staff, db)
 
-            logger.info(f"Create staff completed with ID: {staff.id}")
+            logger.info(f"Register staff completed with ID: {staff.id}")
             return GenericResponse.success(
-                message="Staff created successfully",
+                message="Staff registered successfully",
                 results={"id": str(staff.id), "email": staff.email},
                 status_code=201,
             )
         except Exception as e:
-            logger.error(f"Error creating staff: {str(e)}")
+            logger.error(f"Error registering staff: {str(e)}")
             if isinstance(e, BadRequestException):
                 return GenericResponse.failed(message=e.message, status_code=400, results=[])
             return GenericResponse.failed(
-                message=f"Error creating staff: {str(e)}",
+                message=f"Error registering staff: {str(e)}",
                 status_code=500,
                 results=[],
             )
