@@ -27,6 +27,22 @@ class StaffUpdateRequest(BaseModel):
     is_active: Optional[bool] = None
 
 
+class StaffLoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+@router.post("/login")
+async def login_staff(
+    response: Response,
+    request: StaffLoginRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await StaffService.login(request.model_dump(), db)
+    response.status_code = result.status_code
+    return result
+
+
 @router.post("/")
 async def create_staff(
     response: Response,

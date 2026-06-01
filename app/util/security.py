@@ -1,13 +1,14 @@
 import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Iterable
+from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from passlib.exc import MissingBackendError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
@@ -17,6 +18,8 @@ from app.config.config import (
 )
 from app.config.database_config import get_database
 from app.enums.enums import UserRole
+from app.repository.staff_repository import StaffRepository
+from app.exceptions.exception import UnauthorizedException, ForbiddenException
 
 _password_contexts = {
     "bcrypt": CryptContext(schemes=["bcrypt"], deprecated="auto"),
@@ -24,6 +27,7 @@ _password_contexts = {
 }
 
 bearer_scheme = HTTPBearer()
+staff_repository = StaffRepository()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -69,36 +73,48 @@ def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    db: Session = Depends(get_database),
+async def get_current_user(
+        credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+        db: AsyncSession = Depends(get_database),
 ):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid authentication credentials",
-    )
     token = credentials.credentials
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         token_type = payload.get("type")
         if token_type != "access":
-            raise credentials_exception
-        user_id = payload.get("sub")
-    except (JWTError, TypeError, ValueError):
-        raise credentials_exception
+            raise UnauthorizedException(message="Invalid token type provided.")
 
-    # TODO: inject your UserRepository here
-    # user_repo = UserRepository()
-    # user = user_repo.get_by_uuid(user_id, db)
-    # if not user:
-    #     raise credentials_exception
-    # return user
-    return user_id
+        user_id_str = payload.get("sub")
+        if not user_id_str:
+            raise UnauthorizedException(message="Token payload is missing user identification.")
+
+        # Safely convert the string back to a UUID for database querying
+        user_id = UUID(user_id_str)
+
+    except (JWTError, TypeError, ValueError):
+        raise UnauthorizedException(message="Invalid authentication credentials.")
+
+    # Await the async database call using your repository
+    user = await staff_repository.get_by_id(user_id, db)
+
+    if not user:
+        raise UnauthorizedException(message="Authenticated user no longer exists.")
+
+    if not user.is_active:
+        raise UnauthorizedException(message="This user account has been deactivated.")
+
+    return user
 
 
 def require_roles(roles: Iterable[UserRole]) -> Callable:
-    def _role_checker(current_user=Depends(get_current_user)):
-        # TODO: check current_user.role against roles
+    """
+    Dependency generator to restrict route access based on UserRole enums.
+    Usage in route: Depends(require_roles([UserRole.MANAGER, UserRole.SYSTEM_ADMIN]))
+    """
+
+    async def _role_checker(current_user=Depends(get_current_user)):
+        if current_user.role not in roles:
+            raise ForbiddenException(message="You do not have the required permissions to access this resource.")
         return current_user
 
     return _role_checker
