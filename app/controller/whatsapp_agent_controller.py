@@ -23,7 +23,7 @@ class AgentLeadCreateRequest(BaseModel):
     address: Optional[str] = None
 
     # --- TICKET SPECIFIC DETAILS ---
-    current_stage: TicketStage = TicketStage.NEW_LEAD
+    # 'current_stage' is REMOVED from here. The backend automatically forces it.
     course: Optional[str] = None
     lead_source: Optional[str] = None
     class_mode: Optional[str] = None
@@ -32,6 +32,7 @@ class AgentLeadCreateRequest(BaseModel):
 
 
 class AgentLeadUpdateRequest(BaseModel):
+    # 'current_stage' stays here because updates WILL change the stage!
     current_stage: Optional[TicketStage] = None
     lead_name: Optional[str] = None
     lead_phone: Optional[str] = None
@@ -53,8 +54,13 @@ async def create_lead(
 ):
     lead_data = request.model_dump()
 
-    # Automatically track which agent created this lead securely via their JWT token
+    # --- AUTOMATIC SYSTEM INJECTIONS ---
+    # 1. Automatically track which agent created this lead securely via their JWT token
     lead_data["whatsapp_agent_id"] = current_user.id
+
+    # 2. Automatically force the creation stage to NEW_LEAD
+    lead_data["current_stage"] = TicketStage.NEW_LEAD
+    # -----------------------------------
 
     result = await WhatsappAgentService.create_lead(lead_data, db)
     response.status_code = result.status_code

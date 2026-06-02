@@ -25,17 +25,8 @@ class WhatsappAgentService:
         try:
             logger.info("WhatsApp Agent creating new contact and lead ticket process started")
 
-            target_stage = payload.get("current_stage", TicketStage.NEW_LEAD)
-
-            # Updated validation to check for 'address' instead of 'lead_location' from the payload
-            if target_stage == TicketStage.DETAILS_COMPLETED:
-                required_fields = ["course", "address", "budget", "class_mode", "lead_source"]
-                missing_fields = [f for f in required_fields if not payload.get(f)]
-
-                if missing_fields:
-                    raise BadRequestException(
-                        message=f"Cannot mark lead as '{TicketStage.DETAILS_COMPLETED.value}'. Missing required details: {', '.join(missing_fields)}"
-                    )
+            # The controller strictly provides this now
+            target_stage = payload.get("current_stage")
 
             # --- STEP 1: CREATE THE MASTER CONTACT RECORD ---
             contact_entity_data = {
@@ -43,6 +34,7 @@ class WhatsappAgentService:
                 "last_name": payload.get("last_name"),
                 "phone_number": payload.get("phone_number"),
                 "address": payload.get("address"),
+                # Automatically populated from the JWT token
                 "staff_id": payload.get("whatsapp_agent_id")
             }
 
@@ -50,17 +42,20 @@ class WhatsappAgentService:
             new_contact = await contact_repository.save(new_contact, db)
 
             # --- STEP 2: FORMAT DATA & CREATE THE TICKET RECORD ---
+            # Here we combine the user details to match the Ticket database schema exactly
+            lead_full_name = f"{payload.get('first_name')} {payload.get('last_name')}".strip()
+
             ticket_data = {
                 "contact_id": new_contact.id,
                 "whatsapp_agent_id": payload.get("whatsapp_agent_id"),
 
-                # Merging fields to match the Ticket database schema
-                "lead_name": f"{payload.get('first_name')} {payload.get('last_name')}".strip(),
+                # Mapped from the Contact details
+                "lead_name": lead_full_name,
                 "lead_phone": payload.get("phone_number"),
                 "lead_location": payload.get("address"),
 
                 # Ticket specific details
-                "current_stage": payload.get("current_stage"),
+                "current_stage": target_stage,
                 "course": payload.get("course"),
                 "lead_source": payload.get("lead_source"),
                 "class_mode": payload.get("class_mode"),
@@ -98,7 +93,7 @@ class WhatsappAgentService:
             if isinstance(e, BadRequestException):
                 return GenericResponse.failed(message=e.message, status_code=400, results=[])
             return GenericResponse.failed(
-                message=f"Error creating lead: {str(e)}",
+                message=f"System Error creating lead. Check database constraints: {str(e)}",
                 status_code=500,
                 results=[],
             )
