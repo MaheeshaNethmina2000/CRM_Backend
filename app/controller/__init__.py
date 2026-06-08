@@ -1,30 +1,42 @@
 from fastapi import APIRouter
-from starlette.responses import HTMLResponse
+from fastapi.responses import JSONResponse
 
-# Import your routers here. Example:
-# from .user_controller import router as user_router
+# Import all feature routers
+from app.controller.staff_controller import router as staff_router
+from app.controller.contact_controller import router as contact_router
+from app.controller.ticket_controller import router as ticket_router
+from app.controller.payment_controller import router as payment_router
+from app.controller.call_center_controller import router as call_center_router
+from app.controller.whatsapp_agent_controller import router as whatsapp_agent_router
 
+# Central parent routing architecture for the entire CRM application
 all_routers = APIRouter()
 
-# Register your routers here. Example:
-# all_routers.include_router(user_router)
+# Register all feature routers
+all_routers.include_router(staff_router)
+all_routers.include_router(contact_router)
+all_routers.include_router(ticket_router)
+all_routers.include_router(payment_router)
+all_routers.include_router(call_center_router)
+all_routers.include_router(whatsapp_agent_router)
 
 
-@all_routers.get("/", response_class=HTMLResponse)
-async def root():
-    html_content = """
-    <html>
-        <head>
-            <title>FastAPI Service</title>
-        </head>
-        <body>
-            <h1>FastAPI Service</h1>
-        </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
+@all_routers.get("/", tags=["Root"])
+async def root() -> JSONResponse:
+    return JSONResponse(
+        status_code=200,
+        content={
+            "success": True,
+            "message": "Sisenco Unified Operations CRM API Gateway is running optimally"
+        }
+    )
 
-
-@all_routers.get("/health")
-async def health():
-    return {"status": "ok"}
+@all_routers.get("/health", tags=["System Health"])
+async def health() -> JSONResponse:
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "healthy",
+            "engine": "FastAPI Asynchronous Engine 2.0"
+        }
+    )
