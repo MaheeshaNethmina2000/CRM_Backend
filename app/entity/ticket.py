@@ -4,7 +4,6 @@ from sqlalchemy.sql import func
 from app.entity.base import Base, UUIDPrimaryKeyMixin, TimestampMixin
 from app.enums.enums import TicketStage
 
-
 class Ticket(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "ticket"
 
@@ -13,12 +12,11 @@ class Ticket(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     call_agent_id = Column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=True)
     whatsapp_agent_id = Column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=True)
 
-    #State Management
+    # State Management
     current_stage = Column(SQLEnum(TicketStage), nullable=False, default=TicketStage.NEW_LEAD)
 
     # Lead Data
     lead_name = Column(String(255), nullable=False)
-    lead_phone = Column(String(20), nullable=False)
     lead_location = Column(String(255), nullable=True)
     course = Column(String(255), nullable=True)
     lead_source = Column(String(100), nullable=True)

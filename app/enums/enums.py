@@ -18,6 +18,7 @@ class TicketStage(str, Enum):
     QUALIFIED = "Qualified"
     NOT_QUALIFIED = "Not Qualified"
     SENT_TO_CALL_CENTRE = "Sent to Call Centre"
+    CALL_ANSWERED = "Call Answered"
     CALL_NOT_ANSWERED = "Call Not Answered"
     CALL_RESCHEDULED = "Call Rescheduled"
     TECHNICAL_FAULT = "Technical Fault"

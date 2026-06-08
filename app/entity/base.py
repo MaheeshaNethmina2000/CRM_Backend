@@ -8,7 +8,6 @@ from sqlalchemy.orm import DeclarativeBase
 class Base(DeclarativeBase):pass
 
 class UUIDPrimaryKeyMixin:
-    # Added index=True for much faster database lookups
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
 
 class TimestampMixin:
