@@ -13,11 +13,15 @@ from app.exceptions.exception_handler import add_exception_handler
 # CRITICAL ADDITION: We must import all entities here so SQLAlchemy registers them
 # If they are not imported, SQLAlchemy's Base.metadata will not know they exist and won't create them!
 from app.entity.base import Base
-from app.entity.staff import Staff
-from app.entity.contact import Contact
-from app.entity.ticket import Ticket
-from app.entity.payment import Payment
-from app.entity.call_detail import CallDetail
+
+# --- THE UPDATE: Explicitly load the entities into memory ---
+import app.entity.staff
+import app.entity.contact
+import app.entity.ticket
+import app.entity.payment
+import app.entity.call_detail
+import app.entity.activity_log
+
 
 logger = get_logger(class_name=__name__)
 
@@ -47,7 +51,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Sisenco Unified Operations CRM API",
-    description="Enterprise core backend platform driving unified student lifecycle management pipelines",
+    description="Enterprise core backend platform driving unified users lifecycle management pipelines",
     version="1.0.0",
     lifespan=lifespan
 )

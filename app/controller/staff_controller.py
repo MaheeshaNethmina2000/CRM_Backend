@@ -36,7 +36,7 @@ class StaffLoginRequest(BaseModel):
     password: str
 
 
-@router.get("/login")
+@router.post("/login")
 async def login_staff(
     response: Response,
     request: StaffLoginRequest,
